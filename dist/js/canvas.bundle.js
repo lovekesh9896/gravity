@@ -104,72 +104,121 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 
-var canvas = document.querySelector('canvas');
-var c = canvas.getContext('2d');
+var canvas = document.querySelector("canvas");
+var c = canvas.getContext("2d");
 canvas.width = innerWidth;
 canvas.height = innerHeight;
 var mouse = {
   x: innerWidth / 2,
   y: innerHeight / 2
 };
-var colors = ['#2185C5', '#7ECEFD', '#FFF6E5', '#FF7F66']; // Event Listeners
+var gravity = 1;
+var friction = 0.9;
+var colors = ["#2185C5", "#7ECEFD", "#FFF6E5", "#FF7F66"]; // Event Listeners
 
-addEventListener('mousemove', function (event) {
+addEventListener("mousemove", function (event) {
   mouse.x = event.clientX;
   mouse.y = event.clientY;
 });
-addEventListener('resize', function () {
+addEventListener("resize", function () {
   canvas.width = innerWidth;
   canvas.height = innerHeight;
   init();
-}); // Objects
+});
+var animationId;
+var ballArray = []; // Objects
 
-var _Object = /*#__PURE__*/function () {
-  function Object(x, y, radius, color) {
-    _classCallCheck(this, Object);
+var Ball = /*#__PURE__*/function () {
+  function Ball(x, y, radius, color, dx, dy) {
+    _classCallCheck(this, Ball);
 
     this.x = x;
     this.y = y;
     this.radius = radius;
     this.color = color;
+    this.dy = dy;
+    this.dx = dx;
+    this.touched = 0;
+    this.id = Math.random();
   }
 
-  _createClass(Object, [{
+  _createClass(Ball, [{
     key: "draw",
     value: function draw() {
       c.beginPath();
       c.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
       c.fillStyle = this.color;
       c.fill();
+      c.stroke();
       c.closePath();
+    }
+  }, {
+    key: "kill",
+    value: function kill() {
+      var _this = this;
+
+      this.radius = 0;
+      ballArray = ballArray.filter(function (item) {
+        return item.id != _this.id;
+      });
+      console.log("in kill", ballArray.length);
     }
   }, {
     key: "update",
     value: function update() {
+      var _this2 = this;
+
+      if (this.y + this.radius + this.dy >= canvas.height) {
+        this.dy = -this.dy * friction;
+        this.touched += 1;
+      } else {
+        this.dy += gravity;
+      }
+
+      if (this.x + this.radius + this.dx >= canvas.width || this.x - this.radius <= 0) {
+        this.dx = -this.dx;
+      }
+
+      this.x += this.dx;
+      this.y += this.dy;
+
+      if (this.touched == 300) {
+        setTimeout(function () {
+          console.log("ordered to kill", _this2.touched);
+
+          _this2.kill();
+        }, 500);
+      }
+
       this.draw();
     }
   }]);
 
-  return Object;
+  return Ball;
 }(); // Implementation
+// let ball;
 
-
-var objects;
 
 function init() {
-  objects = [];
+  for (var i = 0; i < 10; i++) {
+    var radius = Object(_utils__WEBPACK_IMPORTED_MODULE_0__["randomIntFromRange"])(20, 40);
+    var x = Object(_utils__WEBPACK_IMPORTED_MODULE_0__["randomIntFromRange"])(radius, canvas.width - radius);
+    var y = Object(_utils__WEBPACK_IMPORTED_MODULE_0__["randomIntFromRange"])(0, canvas.height - radius);
+    var dx = Object(_utils__WEBPACK_IMPORTED_MODULE_0__["randomIntFromRange"])(-2, 2);
+    var dy = Object(_utils__WEBPACK_IMPORTED_MODULE_0__["randomIntFromRange"])(-2, 2);
+    var color = Object(_utils__WEBPACK_IMPORTED_MODULE_0__["randomColor"])(colors);
+    ballArray.push(new Ball(x, y, radius, color, dx, dy));
+  } // ball = new Ball(canvas.width / 2, canvas.height / 2, 30, "red", 2);
 
-  for (var i = 0; i < 400; i++) {// objects.push()
-  }
 } // Animation Loop
 
 
 function animate() {
-  requestAnimationFrame(animate);
+  animationId = requestAnimationFrame(animate);
   c.clearRect(0, 0, canvas.width, canvas.height);
-  c.fillText('HTML CANVAS BOILERPLATE', mouse.x, mouse.y); // objects.forEach(object => {
-  //  object.update()
-  // })
+  ballArray.forEach(function (ball) {
+    ball.update();
+  }); // ball.update();
 }
 
 init();
